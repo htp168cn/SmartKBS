@@ -305,11 +305,12 @@ def renew_token_if_needed(payload: Optional[dict[str, Any]]) -> Optional[str]:
 ROLE_ADMIN = 0
 ROLE_TEACHER = 1
 ROLE_STUDENT = 2
+ROLE_PARENT = 3  # 家长端（第四端）：与学生绑定后只读查看孩子数据
 
 # ── 角色判断 ──
 
 def get_user_role(username: str) -> Optional[int]:
-    """获取用户角色: 0=管理员, 1=教师, 2=普通用户"""
+    """获取用户角色: 0=管理员, 1=教师, 2=学生, 3=家长"""
     rows = execute_query("SELECT role FROM users WHERE username=?", (username,))
     if rows:
         return rows[0][0]
@@ -318,17 +319,23 @@ def get_user_role(username: str) -> Optional[int]:
 
 def is_admin(username: str) -> bool:
     role = get_user_role(username)
-    return role == 0
+    return role == ROLE_ADMIN
 
 
 def is_teacher(username: str) -> bool:
     role = get_user_role(username)
-    return role == 1
+    return role == ROLE_TEACHER
 
 
 def is_regular_user(username: str) -> bool:
     role = get_user_role(username)
-    return role == 2
+    return role == ROLE_STUDENT
+
+
+def is_parent(username: str) -> bool:
+    """是否为家长账号"""
+    role = get_user_role(username)
+    return role == ROLE_PARENT
 
 
 def can_create_task(username: str) -> bool:

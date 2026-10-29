@@ -98,6 +98,16 @@ import NewsHubPage from './pages/NewsHubPage'
 import DailyDiscoveryAdminPage from './pages/DailyDiscoveryAdminPage'
 import NewsAdminPage from './pages/NewsAdminPage'
 import ShowcasePage from './pages/ShowcasePage'
+// 家长端（第四端）：只读查看孩子的成绩/错题/考勤/通知/作业
+import ParentHomePage from './pages/parent/ParentHome'
+import ParentScoresPage from './pages/parent/ParentScores'
+import ParentWrongBookPage from './pages/parent/ParentWrongBook'
+import ParentAttendancePage from './pages/parent/ParentAttendance'
+import ParentNotificationsPage from './pages/parent/ParentNotifications'
+import ParentHomeworkPage from './pages/parent/ParentHomework'
+
+/** 家长角色专用路由集合（与 RequireRole 配合，地址栏手输也进不去别的端） */
+const PARENT_ONLY = ['parent']
 
 function App() {
   const navigate = useNavigate()
@@ -152,8 +162,15 @@ function App() {
           <Route path="/login" element={isLoggedIn ? <Navigate to="/dashboard" /> : <LoginPage />} />
           <Route path="/exam-take/:examId" element={isLoggedIn && user?.role === 'student' ? <ExamTakePage /> : <Navigate to={isLoggedIn ? '/chat' : '/login'} />} />
           <Route path="/" element={isLoggedIn ? <AppLayout /> : <Navigate to="/login" />}>
-            <Route index element={<DashboardPage />} />
-            <Route path="dashboard" element={<DashboardPage />} />
+            {/* 家长登录后统一进家长端，避免落到三端共用的仪表盘 */}
+            <Route index element={user?.role === 'parent' ? <Navigate to="/parent" /> : <DashboardPage />} />
+            <Route path="dashboard" element={user?.role === 'parent' ? <Navigate to="/parent" /> : <DashboardPage />} />
+            <Route path="parent" element={<RequireRole roles={PARENT_ONLY}><ParentHomePage /></RequireRole>} />
+            <Route path="parent/scores" element={<RequireRole roles={PARENT_ONLY}><ParentScoresPage /></RequireRole>} />
+            <Route path="parent/wrong-book" element={<RequireRole roles={PARENT_ONLY}><ParentWrongBookPage /></RequireRole>} />
+            <Route path="parent/attendance" element={<RequireRole roles={PARENT_ONLY}><ParentAttendancePage /></RequireRole>} />
+            <Route path="parent/notifications" element={<RequireRole roles={PARENT_ONLY}><ParentNotificationsPage /></RequireRole>} />
+            <Route path="parent/homework" element={<RequireRole roles={PARENT_ONLY}><ParentHomeworkPage /></RequireRole>} />
             <Route path="task-todo" element={user?.role === 'student' ? <TaskTodoPage /> : <Navigate to="/dashboard" />} />
             <Route path="chat" element={<ChatPage />} />
             <Route path="html-files" element={<HtmlFilesPage />} />

@@ -74,6 +74,14 @@
     "classAnalytics": "班级分析",
     "assignmentReview": "作业批阅"
   },
+  "parentMenu": {
+    "home": "孩子概览",
+    "scores": "考试成绩",
+    "wrongBook": "错题本",
+    "attendance": "考勤记录",
+    "notifications": "通知消息",
+    "homework": "作业情况"
+  },
   "adminMenu": {
     "systemSettings": "系统设置",
     "securityConfig": "安全配置"

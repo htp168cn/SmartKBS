@@ -114,7 +114,9 @@ const LoginPage: React.FC = () => {
     try {
       await login(values.username, values.password)
       message.success(t('loginSuccess'))
-      navigate('/dashboard')
+      // 家长端（第四端）登录后直达家长首页
+      const role = useAuthStore.getState().user?.role
+      navigate(role === 'parent' ? '/parent' : '/dashboard')
     } catch (err: any) {
       const detail = err?.response?.data?.detail || err.message || t('loginFailed')
       message.error(detail)

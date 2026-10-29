@@ -110,10 +110,10 @@ async def login(req: LoginRequest, fastapi_request: Request):
         else:
             gender_str = g
 
-    role_name = {0: "admin", 1: "teacher", 2: "student"}.get(role_val, "student")
+    role_name = {0: "admin", 1: "teacher", 2: "student", 3: "parent"}.get(role_val, "student")
 
     # ── 记录登录日志（考勤统计用） ──
-    # 记录所有用户（学生/教师/管理员）的登录
+    # 记录所有用户（学生/教师/管理员/家长）的登录
     logger.info(f"登录日志检查 - username={username}, role_val={role_val}, name_val={name_val}")
     try:
         import datetime
@@ -131,7 +131,7 @@ async def login(req: LoginRequest, fastapi_request: Request):
         user_agent = fastapi_request.headers.get("user-agent", "")[:200]
 
         # 角色名称映射
-        role_label = {0: "管理员", 1: "教师", 2: "学生"}.get(role_val, "未知")
+        role_label = {0: "管理员", 1: "教师", 2: "学生", 3: "家长"}.get(role_val, "未知")
         execute_insert_update(
             """INSERT INTO login_logs (username, student_name, grade, class_name, login_time, login_ip, user_agent)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
@@ -237,7 +237,7 @@ async def get_current_user(request: Request):
         )
 
     username, class_val, name_val, gender_val, role_val, grade_val = rows[0]
-    role_name = {0: "admin", 1: "teacher", 2: "student"}.get(role_val, "student")
+    role_name = {0: "admin", 1: "teacher", 2: "student", 3: "parent"}.get(role_val, "student")
 
     # ── 会话恢复时也记录考勤（所有角色均记录） ──
     try:
@@ -252,7 +252,7 @@ async def get_current_user(request: Request):
             src_ip = client_ip(request)   # 同上：统一走 security_guard.client_ip
             user_agent = request.headers.get("user-agent", "")[:200]
             now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            role_label = {0: "管理员", 1: "教师", 2: "学生"}.get(role_val, "未知")
+            role_label = {0: "管理员", 1: "教师", 2: "学生", 3: "家长"}.get(role_val, "未知")
             execute_insert_update(
                 """INSERT INTO login_logs (username, student_name, grade, class_name, login_time, login_ip, user_agent)
                    VALUES (?, ?, ?, ?, ?, ?, ?)""",

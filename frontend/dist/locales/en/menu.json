@@ -74,6 +74,14 @@
     "classAnalytics": "Class Analytics",
     "assignmentReview": "Assignment Review"
   },
+  "parentMenu": {
+    "home": "Child Overview",
+    "scores": "Scores",
+    "wrongBook": "Wrong Answers",
+    "attendance": "Attendance",
+    "notifications": "Notifications",
+    "homework": "Homework"
+  },
   "adminMenu": {
     "systemSettings": "System Settings",
     "securityConfig": "Security Config"

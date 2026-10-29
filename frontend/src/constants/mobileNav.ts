@@ -73,12 +73,24 @@ const STAFF_ALLOWED = [
   '/summary-export',       // 汇总统计与导出（四张表窄屏改卡片，导出按钮保留）
 ]
 
+/** 家长端（第四端）：手机优先，六个页面全部开放 */
+const PARENT_ALLOWED = [
+  '/parent',            // 概览（含全部子路由 /parent/scores 等，前缀匹配即可，此处列出便于阅读）
+  '/parent/scores',     // 成绩
+  '/parent/wrong-book', // 错题
+  '/parent/attendance', // 考勤
+  '/parent/notifications', // 通知
+  '/parent/homework',   // 作业
+  '/about',
+]
+
 /**
  * 当前路径在手机端是否允许渲染真实页面。
  * '/'（index 即 dashboard）恒放行；命中白名单的路由及子路径放行。
  */
 export function isMobileAllowedPath(role: string | undefined, path: string): boolean {
   if (path === '/') return true
+  if (role === 'parent') return PARENT_ALLOWED.some((r) => path === r || path.startsWith(r + '/'))
   const list = role === 'student' ? STUDENT_ALLOWED : STAFF_ALLOWED
   return list.some((r) => path === r || path.startsWith(r + '/'))
 }

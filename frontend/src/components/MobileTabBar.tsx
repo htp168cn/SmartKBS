@@ -6,6 +6,7 @@ import {
   HomeOutlined,
   MessageOutlined,
   QuestionCircleOutlined,
+  TrophyOutlined,
 } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
@@ -36,6 +37,14 @@ const STAFF_TABS: TabDef[] = [
   { key: '/notifications', labelKey: 'notifications', fallback: '通知', icon: <BellOutlined /> },
 ]
 
+// 家长端（第四端）底部 Tab：概览 / 成绩 / 作业 / 通知
+const PARENT_TABS: TabDef[] = [
+  { key: '/parent', labelKey: 'parentMenu.home', fallback: '概览', icon: <HomeOutlined /> },
+  { key: '/parent/scores', labelKey: 'parentMenu.scores', fallback: '成绩', icon: <TrophyOutlined /> },
+  { key: '/parent/homework', labelKey: 'parentMenu.homework', fallback: '作业', icon: <BookOutlined /> },
+  { key: '/parent/notifications', labelKey: 'parentMenu.notifications', fallback: '通知', icon: <BellOutlined /> },
+]
+
 interface Props {
   role: string
   activePath: string
@@ -45,7 +54,7 @@ interface Props {
 const MobileTabBar: React.FC<Props> = ({ role, activePath, onOpenMenu }) => {
   const navigate = useNavigate()
   const { t } = useTranslation('menu')
-  const tabs = role === 'student' ? STUDENT_TABS : STAFF_TABS
+  const tabs = role === 'parent' ? PARENT_TABS : role === 'student' ? STUDENT_TABS : STAFF_TABS
 
   const isActive = (key: string) =>
     activePath === key ||

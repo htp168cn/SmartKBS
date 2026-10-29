@@ -118,6 +118,8 @@ def _standardize_role(role_value) -> int:
         return 0
     if r in ("1", "teacher", "教师"):
         return 1
+    if r in ("3", "parent", "家长"):
+        return 3  # 家长端（第四端），仅管理员可创建
     return 2
 
 
@@ -715,7 +717,7 @@ async def delete_user(username: str, request: Request):
 async def export_users(request: Request, keyword: Optional[str] = None):
     """导出用户为 CSV 文件"""
     current_user = get_current_user(request)
-    if _caller_role(current_user) == 2:
+    if _caller_role(current_user) not in (0, 1):
         raise HTTPException(status_code=403, detail="权限不足：仅管理员或教师可以导出用户")
 
     conds, params = [], []
@@ -836,7 +838,7 @@ async def get_all_users(
     """
     current_user = get_current_user(request)
     caller_role = _caller_role(current_user)
-    if caller_role == 2:
+    if caller_role not in (0, 1):
         raise HTTPException(status_code=403, detail="权限不足：仅管理员或教师可以查看用户列表")
 
     conds = ["(username LIKE ? ESCAPE '\\' OR name LIKE ? ESCAPE '\\')"] if (keyword and keyword.strip()) else []
@@ -1555,3 +1557,83 @@ async def class_mgmt_delete(class_id: int, request: Request):
     execute_insert_update("DELETE FROM classes WHERE id=?", (class_id,))
     logger.info(f"[class-mgmt] 空壳班级已删除: id={class_id} {display} by={user.get('username')}")
     return {"message": f"班级「{display}」已删除"}
+
+
+# ── 家长-学生绑定管理（家长端第四端，仅管理员） ──
+
+class GuardianBindRequest(BaseModel):
+    student_username: str
+    guardian_username: str
+    relation: Optional[str] = ""  # 亲属关系：父亲/母亲/祖辈…（展示用）
+
+
+def _assert_role(username: str, role: int, role_label: str) -> str:
+    """校验目标账号存在且角色匹配，返回规范化后的用户名"""
+    un = (username or "").strip()
+    rows = execute_query("SELECT role FROM users WHERE username=?", (un,))
+    if not rows:
+        raise HTTPException(status_code=404, detail=f"用户 '{un}' 不存在")
+    if rows[0][0] != role:
+        raise HTTPException(status_code=400, detail=f"用户 '{un}' 不是{role_label}账号")
+    return un
+
+
+@router.get("/{username}/guardians", summary="查询某学生的家长绑定(仅管理员)")
+async def list_student_guardians(username: str, request: Request):
+    user = get_current_user(request)
+    _assert_admin_role(user, "查看家长绑定")
+    student = _assert_role(username, 2, "学生")
+    rows = execute_query(
+        """SELECT sg.guardian_username, IFNULL(g.name, ''), IFNULL(sg.relation, ''), sg.created_at
+           FROM student_guardians sg
+           LEFT JOIN users g ON g.username = sg.guardian_username
+           WHERE sg.student_username = ?
+           ORDER BY sg.id""",
+        (student,),
+    )
+    return {"guardians": [
+        {"guardian_username": r[0], "name": r[1], "relation": r[2], "created_at": r[3]}
+        for r in rows
+    ]}
+
+
+@router.post("/guardians/bind", summary="绑定家长与学生(仅管理员)")
+async def bind_guardian(req: GuardianBindRequest, request: Request):
+    user = get_current_user(request)
+    _assert_admin_role(user, "绑定家长")
+    student = _assert_role(req.student_username, 2, "学生")
+    guardian = _assert_role(req.guardian_username, 3, "家长")
+
+    exists = execute_query(
+        "SELECT id FROM student_guardians WHERE student_username=? AND guardian_username=?",
+        (student, guardian),
+    )
+    if exists:
+        raise HTTPException(status_code=400, detail=f"家长 '{guardian}' 已绑定学生 '{student}'")
+
+    execute_insert_update(
+        "INSERT INTO student_guardians (student_username, guardian_username, relation) VALUES (?, ?, ?)",
+        (student, guardian, (req.relation or "").strip()),
+    )
+    logger.info(f"[guardian] 绑定成功: 家长 {guardian} -> 学生 {student} by={user.get('username')}")
+    return {"message": f"家长 '{guardian}' 已绑定学生 '{student}'"}
+
+
+@router.delete("/guardians/{student_username}/{guardian_username}", summary="解除家长与学生绑定(仅管理员)")
+async def unbind_guardian(student_username: str, guardian_username: str, request: Request):
+    user = get_current_user(request)
+    _assert_admin_role(user, "解绑家长")
+    student = (student_username or "").strip()
+    guardian = (guardian_username or "").strip()
+    exists = execute_query(
+        "SELECT id FROM student_guardians WHERE student_username=? AND guardian_username=?",
+        (student, guardian),
+    )
+    if not exists:
+        raise HTTPException(status_code=404, detail="该绑定关系不存在")
+    execute_insert_update(
+        "DELETE FROM student_guardians WHERE student_username=? AND guardian_username=?",
+        (student, guardian),
+    )
+    logger.info(f"[guardian] 解绑成功: 家长 {guardian} -x- 学生 {student} by={user.get('username')}")
+    return {"message": f"家长 '{guardian}' 已与学生 '{student}' 解绑"}

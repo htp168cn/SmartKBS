@@ -220,6 +220,21 @@ def init_db():
             except Exception as e:
                 logger.warning(f"teacher_assignments 约束迁移跳过（首次创建或无变化）: {e}")
 
+            # ── 家长-学生绑定表（家长端第四端：一个家长可绑定多个学生，一个学生可有多个家长）──
+            c.execute("""CREATE TABLE IF NOT EXISTS student_guardians (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                student_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+                guardian_username TEXT NOT NULL REFERENCES users(username) ON DELETE CASCADE,
+                relation TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL DEFAULT (datetime('now')),
+                UNIQUE(student_username, guardian_username)
+            )""")
+            try:
+                c.execute("CREATE INDEX IF NOT EXISTS idx_sg_guardian ON student_guardians(guardian_username)")
+                c.execute("CREATE INDEX IF NOT EXISTS idx_sg_student ON student_guardians(student_username)")
+            except sqlite3.OperationalError:
+                pass
+
             # ── 每日使用量统计表（限流用，与日志解耦） ──
             c.execute(
                 """CREATE TABLE IF NOT EXISTS daily_usage (

@@ -110,6 +110,19 @@ function buildStudentMenu(t: (k: string) => string) {
   return m
 }
 
+/** 构建家长菜单（第四端，平级条目：手机优先，无深层分组） */
+function buildParentMenu(t: (k: string) => string): TeacherMenuItem[] {
+  const g = (key: string) => t(key)
+  return [
+    { type: 'item', key: '/parent', icon: <HomeOutlined />, label: g('parentMenu.home') },
+    { type: 'item', key: '/parent/scores', icon: <TrophyOutlined />, label: g('parentMenu.scores') },
+    { type: 'item', key: '/parent/wrong-book', icon: <BookOutlined />, label: g('parentMenu.wrongBook') },
+    { type: 'item', key: '/parent/attendance', icon: <AuditOutlined />, label: g('parentMenu.attendance') },
+    { type: 'item', key: '/parent/notifications', icon: <BellOutlined />, label: g('parentMenu.notifications') },
+    { type: 'item', key: '/parent/homework', icon: <CheckCircleOutlined />, label: g('parentMenu.homework') },
+  ]
+}
+
 /** 构建教师/管理员菜单（基于当前翻译） */
 function buildTeacherMenu(t: (k: string) => string) {
   const g = (key: string) => t(key)
@@ -184,11 +197,13 @@ const AppLayout: React.FC = () => {
   // 基于翻译构建菜单
   const studentMenuGroups = useMemo(() => buildStudentMenu(t), [t])
   const teacherMenuItems = useMemo(() => buildTeacherMenu(t), [t])
+  const parentMenuItems = useMemo(() => buildParentMenu(t), [t])
 
   // 根据角色构建菜单项（分组分类）
   const isStudent = user?.role === 'student'
   const isTeacher = user?.role === 'teacher'
   const isAdmin = user?.role === 'admin'
+  const isParent = user?.role === 'parent'
 
   // 获取单位名称
   useEffect(() => {
@@ -199,7 +214,8 @@ const AppLayout: React.FC = () => {
 
   // 根据用户角色过滤菜单项并转为 Ant Design Menu 格式
   const buildMenuItems = () => {
-    const raw: (TeacherMenuItem | typeof studentMenuGroups[number])[] = isStudent ? studentMenuGroups : teacherMenuItems
+    const raw: (TeacherMenuItem | typeof studentMenuGroups[number])[] =
+      isParent ? parentMenuItems : isStudent ? studentMenuGroups : teacherMenuItems
     return raw.map((item) => {
       // 平级条目（TeacherMenuItem type='item'）
       if ('type' in item && item.type === 'item') {
@@ -242,7 +258,8 @@ const AppLayout: React.FC = () => {
 
   // 当前路径变化时，自动展开所在的分组
   useEffect(() => {
-    const items: (TeacherMenuItem | typeof studentMenuGroups[number])[] = isStudent ? studentMenuGroups : teacherMenuItems
+    const items: (TeacherMenuItem | typeof studentMenuGroups[number])[] =
+      isParent ? parentMenuItems : isStudent ? studentMenuGroups : teacherMenuItems
     for (const item of items) {
       if ('children' in item && item.children) {
         const group = item as { key: string; children: { key: string }[] }
@@ -254,7 +271,7 @@ const AppLayout: React.FC = () => {
         }
       }
     }
-  }, [location.pathname, isStudent, studentMenuGroups, teacherMenuItems])
+  }, [location.pathname, isStudent, isParent, studentMenuGroups, teacherMenuItems, parentMenuItems])
 
   // ── 代码练习页随机名言（仅在挂载时计算一次） ──
   // codeQuote 供 CodePracticePage 通过 context 或 props 获取

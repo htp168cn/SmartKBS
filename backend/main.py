@@ -293,6 +293,7 @@ from backend.api.upgrade_router import router as upgrade_router
 from backend.api.daily_discovery_router import router as daily_discovery_router
 from backend.api.news_router import router as news_router
 from backend.api.showcase_router import router as showcase_router
+from backend.api.parent_router import router as parent_router
 
 app.include_router(quest_router, prefix="/api", tags=["知识闯关"])
 app.include_router(quick_quiz_router, prefix="/api", tags=["知识抢答"])
@@ -304,6 +305,7 @@ app.include_router(chat_router, prefix="/api/chat", tags=["对话"])
 app.include_router(history_router, prefix="/api/history", tags=["历史记录"])
 app.include_router(resources_router, prefix="/api/resources", tags=["资源中心"])
 app.include_router(tasks_router, prefix="/api/tasks", tags=["任务管理"])
+app.include_router(parent_router, prefix="/api/parent", tags=["家长端"])
 app.include_router(system_router, prefix="/api/system", tags=["系统工具"])
 app.include_router(files_router, prefix="/api/files", tags=["文件服务"])
 app.include_router(config_router, prefix="/api/config", tags=["系统配置"])

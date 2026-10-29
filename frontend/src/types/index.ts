@@ -6,7 +6,7 @@ export interface User {
   name: string;
   class: string;
   gender: string;
-  role: 'admin' | 'teacher' | 'student';
+  role: 'admin' | 'teacher' | 'student' | 'parent';
   grade: string;
 }
 
